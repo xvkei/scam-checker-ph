@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scam Checker PH — Expert System</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f0;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    /* ── Header ── */
+    .header { margin-bottom: 1.5rem; }
+    .header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .header p  { font-size: 14px; color: #666; margin-bottom: 6px; }
+    .disclaimer {
+      font-size: 11px;
+      color: #999;
+      border-top: 1px solid #ddd;
+      padding-top: 6px;
+    }
+
+    /* ── Progress dots ── */
+    .progress { display: flex; gap: 6px; margin-bottom: 1.5rem; }
+    .dot {
+      height: 4px; flex: 1; border-radius: 2px;
+      background: #ddd; transition: background 0.3s;
+    }
+    .dot.active { background: #1a1a1a; }
+    .dot.done   { background: #888; }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Question ── */
+    .question { font-size: 16px; font-weight: 600; margin-bottom: 1rem; line-height: 1.5; }
+    .options  { display: flex; flex-direction: column; gap: 8px; }
+    .opt-btn {
+      background: transparent;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 14px;
+      color: #1a1a1a;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .opt-btn:hover { background: #f5f5f0; border-color: #aaa; }
+
+    /* ── Back button ── */
+    .back-btn {
+      background: transparent;
+      border: none;
+      font-size: 13px;
+      color: #888;
+      cursor: pointer;
+      margin-bottom: 1rem;
+      padding: 0;
+    }
+    .back-btn:hover { color: #1a1a1a; }
+
+    /* ── Verdict card colors ── */
+    .verdict-yes   { background: #fff0f0; border-color: #f5a0a0; }
+    .verdict-maybe { background: #fffbf0; border-color: #f5cc80; }
+    .verdict-no    { background: #f0fff5; border-color: #80d4a0; }
+
+    .verdict-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .verdict-yes   .verdict-title { color: #8b0000; }
+    .verdict-maybe .verdict-title { color: #7a4500; }
+    .verdict-no    .verdict-title { color: #1a5c2e; }
+
+    .verdict-sub { font-size: 13px; margin-bottom: 1rem; }
+    .verdict-yes   .verdict-sub { color: #6e2020; }
+    .verdict-maybe .verdict-sub { color: #5c3300; }
+    .verdict-no    .verdict-sub { color: #1a4a25; }
+
+    /* ── Severity badge ── */
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      letter-spacing: 0.04em;
+    }
+    .badge-high  { background: #fcc; color: #7a0000; }
+    .badge-med   { background: #fde8a0; color: #5c3a00; }
+    .badge-low   { background: #b8f0cc; color: #145c2a; }
+
+    /* ── Rules fired box ── */
+    .rules-fired {
+      background: #f5f5f0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 1rem;
+    }
+    .rules-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .rules-fired ul { padding-left: 16px; }
+    .rules-fired ul li { font-size: 13px; color: #555; margin-bottom: 3px; }
+
+    /* ── Info sections ── */
+    .info-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .info-val { font-size: 14px; color: #1a1a1a; margin-bottom: 14px; }
+
+    /* ── Steps list ── */
+    .steps { list-style: none; padding: 0; }
+    .steps li {
+      display: flex;
+      gap: 10px;
+      font-size: 14px;
+      color: #1a1a1a;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .steps li:last-child { border-bottom: none; }
+    .step-num {
+      font-size: 12px;
+      font-weight: 600;
+      background: #eee;
+      border-radius: 50%;
+      width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      color: #666;
+    }
+
+    /* ── Restart button ── */
+    .restart-btn {
+      background: transparent;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      color: #1a1a1a;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    /* this is the only thing i changed for slight cover change vvv */
+    .restart-btn:hover { background: #f5f5f0; border-color: #aaa; } 
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Was I scammed?</h1>
+    <p>Answer a few questions. We'll tell you what happened and what to do.</p>
+    <p class="disclaimer">For academic purposes only. Not actual legal advice. Always consult a qualified lawyer for legal concerns.</p>
+  </div>
+
+  <div class="progress" id="progress"></div>
+  <div id="app"></div>
+
+</div>
+
+<script>
+// ============================================================
+// KNOWLEDGE BASE — All questions and verdict nodes
+// Each node is either a question (has "options") or a verdict
+// ============================================================
+const flows = {
+
+  // ── LAYER 1: First question ──────────────────────────────
+  start: {
+    q: "What best describes what happened?",
+    options: [
+      { label: "Someone asked me to send money (GCash, Maya, bank)", next: "money_sent" },
+      { label: "I paid for something online but never received it",   next: "online_shop" },
+      { label: "I clicked a link and entered personal info",          next: "phishing" },
+      { label: "Someone offered me a job or investment",              next: "job_invest" },
+      { label: "My account was taken over / SIM was swapped",        next: "account_takeover" },
+    ]
+  },
+
+  // ── LAYER 2: Follow-up questions ────────────────────────
+  money_sent: {
+    q: "Did you actually send money?",
+    options: [
+      { label: "Yes, I already sent it",         next: "money_sent_yes" },
+      { label: "Not yet, they're still asking",  next: "money_sent_no"  },
+    ]
+  },
+  money_sent_yes: {
+    q: "Who did they claim to be?",
+    options: [
+      { label: "A friend/relative in emergency",    next: "verdict_gcash_scam"    },
+      { label: "GCash, Maya, or bank support",      next: "verdict_impersonation" },
+      { label: "Someone I met online (romance)",    next: "verdict_romance"        },
+      { label: "A seller or buyer",                 next: "verdict_selling_scam"  },
+    ]
+  },
+  money_sent_no: {
+    q: "How did they contact you?",
+    options: [
+      { label: "Text / call out of nowhere",             next: "verdict_smishing"      },
+      { label: "Facebook / Instagram DM",                next: "verdict_social_scam"   },
+      { label: "They claim to know someone I know",      next: "verdict_impersonation" },
+    ]
+  },
+  online_shop: {
+    q: "Where did you buy from?",
+    options: [
+      { label: "Facebook Marketplace or group",      next: "verdict_fb_shop"       },
+      { label: "Shopee / Lazada / TikTok Shop",      next: "verdict_platform_shop" },
+      { label: "A website or Instagram page",        next: "verdict_fake_store"    },
+    ]
+  },
+  phishing: {
+    q: "What kind of info did you enter?",
+    options: [
+      { label: "GCash / Maya / bank username and password", next: "verdict_phishing_bank" },
+      { label: "Credit card details",                       next: "verdict_phishing_card" },
+      { label: "OTP or verification code",                  next: "verdict_otp"           },
+      { label: "Just name and email",                       next: "verdict_phishing_low"  },
+    ]
+  },
+  job_invest: {
+    q: "Did they ask you to pay anything first?",
+    options: [
+      { label: "Yes — registration fee, training fee, starter kit", next: "verdict_job_scam"        },
+      { label: "Yes — to 'invest' and earn big returns",            next: "verdict_investment_scam" },
+      { label: "No, but something felt off",                        next: "verdict_maybe_job"       },
+    ]
+  },
+  account_takeover: {
+    q: "What happened exactly?",
+    options: [
+      { label: "I gave someone an OTP and lost access",              next: "verdict_otp"          },
+      { label: "My SIM stopped working, I lost everything",          next: "verdict_sim_swap"     },
+      { label: "Someone logged into my account without me knowing",  next: "verdict_unauthorized" },
+    ]
+  },
+
+  // ── LAYER 3: Verdict nodes ───────────────────────────────
+  // Each verdict has: verdict, severity, type, ruleId,
+  //                   rulesFired (array), law, steps (array)
+
+  verdict_gcash_scam: {
+    verdict: "yes", severity: "high",
+    type: "Emergency scam (Budol Fund)",
+    ruleId: "R001",
+    rulesFired: [
+      "Money was sent to an unknown party",
+      "Sender claimed to be a friend or relative in emergency",
+      "Transaction was done via e-wallet or online transfer"
+    ],
+    law: "RA 10175 — Cybercrime Prevention Act, Sec. 6 (Estafa via online means)",
+    steps: [
+      "File a complaint at your nearest NBI or PNP-ACG office",
+      "Report the number to your telco (Globe/Smart) for blocking",
+      "Report the GCash/Maya account to the e-wallet's fraud hotline",
+      "Gather all screenshots and transaction receipts as evidence"
+    ]
+  },
+
+  verdict_impersonation: {
+    verdict: "yes", severity: "high",
+    type: "Identity impersonation / vishing",
+    ruleId: "R002",
+    rulesFired: [
+      "Sender impersonated a financial institution or known contact",
+      "Request involved transferring funds or sharing account credentials"
+    ],
+    law: "RA 10175 Sec. 4(b)(2) — Computer-related Identity Theft; BSP fraud rules",
+    steps: [
+      "Call your bank or e-wallet immediately to freeze the account",
+      "Report to BSP Consumer Protection: (02) 8708-7087",
+      "File at NBI Cybercrime Division or PNP-ACG",
+      "Do NOT transact with them further"
+    ]
+  },
+
+  verdict_romance: {
+    verdict: "yes", severity: "high",
+    type: "Romance scam",
+    ruleId: "R003",
+    rulesFired: [
+      "Relationship was initiated online with an unknown person",
+      "Financial request followed after building emotional trust"
+    ],
+    law: "RA 10175 Sec. 4(b)(1) — Computer-related Fraud",
+    steps: [
+      "Stop all contact with the person immediately",
+      "Report their profile to the platform (Facebook, Instagram, dating app)",
+      "File a complaint at NBI Cybercrime Division",
+      "Report to DICT cybercrime hotline: 1326"
+    ]
+  },
+
+  verdict_smishing: {
+    verdict: "yes", severity: "med",
+    type: "SMS phishing (smishing)",
+    ruleId: "R004",
+    rulesFired: [
+      "Unsolicited text or call received from unknown number",
+      "Message contained a financial request or suspicious link"
+    ],
+    law: "RA 10175 Sec. 4(a)(1); RA 11934 — SIM Registration Act",
+    steps: [
+      "Do NOT click any links or send money",
+      "Report the number to NTC via sms.complaints@ntc.gov.ph",
+      "Block the sender on your phone",
+      "Report to DICT hotline: 1326"
+    ]
+  },
+
+  verdict_social_scam: {
+    verdict: "yes", severity: "med",
+    type: "Social media money scam",
+    ruleId: "R005",
+    rulesFired: [
+      "Contact was made via social media (Facebook/Instagram)",
+      "A financial request was made by an unverified account"
+    ],
+    law: "RA 10175 Sec. 4(b)(1) — Computer-related Fraud",
+    steps: [
+      "Do not send any money",
+      "Report the account to Facebook/Instagram directly",
+      "File at PNP-ACG: pnpacg@pnp.gov.ph",
+      "Warn your contacts if the scammer is using a cloned account"
+    ]
+  },
+
+  verdict_selling_scam: {
+    verdict: "yes", severity: "high",
+    type: "Online selling scam",
+    ruleId: "R006",
+    rulesFired: [
+      "Payment was made to a seller online",
+      "Goods or services were never delivered after payment"
+    ],
+    law: "RA 10175 Sec. 4(b)(1) — Computer-related Fraud; RA 7394 — Consumer Act",
+    steps: [
+      "Gather all screenshots, receipts, and chat history",
+      "Report to DTI: hotline 1-384",
+      "File at PNP-ACG or NBI Cybercrime Division",
+      "Report the seller's account/page to the platform"
+    ]
+  },
+
+  verdict_fb_shop: {
+    verdict: "yes", severity: "high",
+    type: "Facebook marketplace scam",
+    ruleId: "R006",
+    rulesFired: [
+      "Transaction occurred on Facebook Marketplace or buy-and-sell group",
+      "Payment was made but item was never received"
+    ],
+    law: "RA 10175 Sec. 4(b)(1) — Computer-related Fraud; RA 7394 — Consumer Act",
+    steps: [
+      "Gather all screenshots, receipts, and chat history",
+      "Report to DTI: hotline 1-384",
+      "File at PNP-ACG: pnpacg@pnp.gov.ph",
+      "Report the seller's page to Facebook"
+    ]
+  },
+
+  verdict_platform_shop: {
+    verdict: "maybe", severity: "med",
+    type: "E-commerce non-delivery",
+    ruleId: "R007",
+    rulesFired: [
+      "Purchase was made on a registered e-commerce platform",
+      "Item was not received within the expected delivery window"
+    ],
+    law: "RA 7394 — Consumer Act; DTI rules on online sellers",
+    steps: [
+      "Open a dispute directly on Shopee/Lazada/TikTok Shop first",
+      "If no resolution, escalate to DTI: hotline 1-384",
+      "If seller is unregistered, file at PNP-ACG",
+      "Keep all order confirmations and chat logs"
+    ]
+  },
+
+  verdict_fake_store: {
+    verdict: "yes", severity: "high",
+    type: "Fake online store",
+    ruleId: "R008",
+    rulesFired: [
+      "Purchase was made on an unverified website or social media page",
+      "No legitimate business registration found for the seller",
+      "Goods were never delivered after payment"
+    ],
+    law: "RA 10175 Sec. 4(b)(1); RA 8792 — E-Commerce Act",
+    steps: [
+      "Report the website to DICT: dict.gov.ph or 1326",
+      "File at NBI Cybercrime Division",
+      "Report to DTI if they posed as a registered business",
+      "Dispute the charge with your bank or e-wallet"
+    ]
+  },
+
+  verdict_phishing_bank: {
+    verdict: "yes", severity: "high",
+    type: "Bank / e-wallet phishing",
+    ruleId: "R009",
+    rulesFired: [
+      "User entered login credentials on a suspicious or fake website",
+      "Credentials belong to a financial account (bank or e-wallet)"
+    ],
+    law: "RA 10175 Sec. 4(a)(1) — Illegal Access; RA 8484 — Access Devices Regulation Act",
+    steps: [
+      "Change your password IMMEDIATELY and enable 2FA",
+      "Call your bank or e-wallet fraud hotline right now",
+      "Report to BSP: (02) 8708-7087",
+      "File at NBI Cybercrime Division"
+    ]
+  },
+
+  verdict_phishing_card: {
+    verdict: "yes", severity: "high",
+    type: "Credit card phishing",
+    ruleId: "R010",
+    rulesFired: [
+      "User entered credit card details on an untrusted page",
+      "Card information may have been harvested for unauthorized use"
+    ],
+    law: "RA 8484 — Access Devices Regulation Act; RA 10175 Sec. 4(a)(1)",
+    steps: [
+      "Call your card issuer NOW to freeze or cancel the card",
+      "Dispute any unauthorized charges immediately",
+      "File at Bangko Sentral and NBI Cybercrime",
+      "Monitor your statements for the next few months"
+    ]
+  },
+
+  verdict_otp: {
+    verdict: "yes", severity: "high",
+    type: "OTP theft / account compromise",
+    ruleId: "R011",
+    rulesFired: [
+      "User shared a one-time password (OTP) with an unauthorized party",
+      "Account access was lost or unauthorized transactions occurred"
+    ],
+    law: "RA 10175 Sec. 4(b)(2) — Computer-related Identity Theft",
+    steps: [
+      "Contact your bank/e-wallet fraud line immediately to freeze access",
+      "Change all related passwords from a safe device",
+      "File at PNP-ACG with screenshots of all transactions",
+      "Report to BSP if money was lost: (02) 8708-7087"
+    ]
+  },
+
+  verdict_phishing_low: {
+    verdict: "maybe", severity: "med",
+    type: "Possible data harvesting",
+    ruleId: "R012",
+    rulesFired: [
+      "Personal information (name, email) was entered on a suspicious page",
+      "No financial credentials were exposed — risk is lower but still present"
+    ],
+    law: "RA 10173 — Data Privacy Act (if personal data was misused)",
+    steps: [
+      "Monitor for suspicious emails or accounts opened in your name",
+      "Report to NPC if data is misused: privacy.gov.ph",
+      "Change passwords on accounts using that email",
+      "Enable 2FA on all important accounts"
+    ]
+  },
+
+  verdict_job_scam: {
+    verdict: "yes", severity: "high",
+    type: "Job scam / pyramiding",
+    ruleId: "R013",
+    rulesFired: [
+      "Job or opportunity required upfront payment from the applicant",
+      "Legitimate employers do not charge fees for hiring"
+    ],
+    law: "RA 10175 Sec. 4(b)(1) — Computer-related Fraud",
+    steps: [
+      "Stop all payments immediately",
+      "Report to DOLE: (02) 8527-8000 or nearest DOLE office",
+      "File at NBI Cybercrime Division or PNP-ACG",
+      "Report the recruiter's profile on the platform they used"
+    ]
+  },
+
+  verdict_investment_scam: {
+    verdict: "yes", severity: "high",
+    type: "Investment / Ponzi scam",
+    ruleId: "R014",
+    rulesFired: [
+      "User was asked to invest money with promise of high returns",
+      "Entity offering the investment is likely not registered with SEC"
+    ],
+    law: "RA 10175 Sec. 4(b)(1); Securities Regulation Code (RA 8799)",
+    steps: [
+      "Check if the entity is SEC-registered at www.sec.gov.ph",
+      "File a complaint at SEC Enforcement Division: (02) 8818-6047",
+      "File at NBI Cybercrime Division",
+      "Gather all contracts, receipts, and chat logs as evidence"
+    ]
+  },
+
+  verdict_maybe_job: {
+    verdict: "maybe", severity: "med",
+    type: "Suspicious job offer",
+    ruleId: "R015",
+    rulesFired: [
+      "Job offer showed red flags but no payment was made yet",
+      "Offer may be legitimate but requires further verification"
+    ],
+    law: "RA 10175 — Cybercrime Prevention Act (if fraud is confirmed)",
+    steps: [
+      "Verify the company at SEC or DTI before proceeding",
+      "Never pay anything to get a job — legitimate employers don't charge fees",
+      "Check DOLE's list of licensed recruiters at poea.gov.ph",
+      "If it feels wrong, trust your gut and stop contact"
+    ]
+  },
+
+  verdict_sim_swap: {
+    verdict: "yes", severity: "high",
+    type: "SIM swap attack",
+    ruleId: "R016",
+    rulesFired: [
+      "User's SIM stopped working unexpectedly",
+      "Attacker likely convinced telco to transfer number to a new SIM"
+    ],
+    law: "RA 10175 Sec. 4(b)(2) — Computer-related Identity Theft; RA 11934 — SIM Registration Act",
+    steps: [
+      "Go to your telco's store IMMEDIATELY with valid ID to recover your SIM",
+      "Contact your bank and e-wallet to freeze accounts linked to that number",
+      "File at NBI Cybercrime Division and report to NTC",
+      "After recovery, update all 2FA to use an authenticator app instead of SMS"
+    ]
+  },
+
+  verdict_unauthorized: {
+    verdict: "maybe", severity: "med",
+    type: "Unauthorized account access",
+    ruleId: "R017",
+    rulesFired: [
+      "Account was accessed without the user's knowledge or consent",
+      "No OTP was shared — access method is unclear"
+    ],
+    law: "RA 10175 Sec. 4(a)(1) — Illegal Access",
+    steps: [
+      "Change your password immediately and log out all sessions",
+      "Enable 2FA on the account",
+      "If money was lost, report to BSP and your bank/e-wallet",
+      "File at PNP-ACG: pnpacg@pnp.gov.ph"
+    ]
+  }
+
+}; // end of knowledge base
+
+
+// ============================================================
+// STATE — tracks where the user is in the decision tree
+// ============================================================
+let history   = [];        // array of previous node keys (for back button)
+let currentKey = "start";  // which node we're showing right now
+let maxSteps   = 3;        // used to size the progress dots
+
+
+// ============================================================
+// INFERENCE ENGINE — reads state, looks up node, renders UI
+// ============================================================
+function render() {
+  const node = flows[currentKey];
+  const app  = document.getElementById("app");
+  const prog = document.getElementById("progress");
+
+  // ── Verdict node ─────────────────────────────────────────
+  if (node.verdict) {
+    // All dots = done when we reach a verdict
+    prog.innerHTML = Array.from({ length: maxSteps }, () =>
+      `<div class="dot done"></div>`).join("");
+
+    const vc = node.verdict === "yes"   ? "verdict-yes"
+             : node.verdict === "maybe" ? "verdict-maybe"
+             :                            "verdict-no";
+
+    const bc = node.severity === "high" ? "badge-high"
+             : node.severity === "med"  ? "badge-med"
+             :                            "badge-low";
+
+    const severityText = node.severity === "high" ? "HIGH RISK"
+                       : node.severity === "med"  ? "MEDIUM RISK"
+                       :                            "LOW RISK";
+
+    const verdictText  = node.verdict === "yes"   ? "You were likely scammed"
+                       : node.verdict === "maybe" ? "This looks suspicious"
+                       :                            "Probably not a scam";
+
+    const rulesHtml = node.rulesFired
+      .map(r => `<li>${r}</li>`).join("");
+
+    const stepsHtml = node.steps
+      .map((s, i) => `<li><span class="step-num">${i + 1}</span>${s}</li>`)
+      .join("");
+
+    app.innerHTML = `
+      <div class="card ${vc}">
+        <span class="badge ${bc}">${severityText}</span>
+        <p class="verdict-title">${verdictText}</p>
+        <p class="verdict-sub">${node.type}</p>
+      </div>
+
+      <div class="rules-fired">
+        <p class="rules-label">Rule ${node.ruleId} fired — conditions matched</p>
+        <ul>${rulesHtml}</ul>
+      </div>
+
+      <div class="card">
+        <p class="info-label">Law involved</p>
+        <p class="info-val">${node.law}</p>
+        <p class="info-label">What to do</p>
+        <ul class="steps">${stepsHtml}</ul>
+      </div>
+
+      <button class="restart-btn" onclick="restart()">Start over</button>
+    `;
+    return;
+  }
+
+  // ── Question node ─────────────────────────────────────────
+  const depth = history.length;
+  prog.innerHTML = Array.from({ length: maxSteps }, (_, i) => {
+    const cls = i < depth ? "done" : i === depth ? "active" : "";
+    return `<div class="dot ${cls}"></div>`;
+  }).join("");
+
+  const optionsHtml = node.options
+    .map((o, i) => `<button class="opt-btn" onclick="choose(${i})">${o.label}</button>`)
+    .join("");
+
+  app.innerHTML = `
+    ${history.length > 0
+      ? `<button class="back-btn" onclick="goBack()">← back</button>`
+      : ""}
+    <div class="card">
+      <p class="question">${node.q}</p>
+      <div class="options">${optionsHtml}</div>
+    </div>
+  `;
+}
+
+// Called when user picks an answer
+function choose(i) {
+  const next = flows[currentKey].options[i].next;
+  history.push(currentKey);         // save current so back button works
+  currentKey = next;                // move to next node
+  if (history.length >= maxSteps) maxSteps = history.length + 1;
+  render();
+}
+
+// Back button — pop the last node from history
+function goBack() {
+  currentKey = history.pop();
+  render();
+}
+
+// Start over — reset everything
+function restart() {
+  history    = [];
+  currentKey = "start";
+  maxSteps   = 3;
+  render();
+}
+
+// Kick off on page load
+render();
+</script>
+</body>
+</html>
